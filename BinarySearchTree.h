@@ -65,16 +65,28 @@ namespace sdsu {
         // wnat to literally work with the node holding the key, and not
         // just the keys and values themselves. Your design will decide if you
         // need something like this or not.
-        BSTNode &getNode(const KEY &key, std::shared_ptr<BSTNode> currentNode){
-            if (currentNode->key == key) return currentNode;
-            else if(key < currentNode->key) getNode(key, currentNode->childL);
-            else if(key > currentNode->key) getNode(key,currentNode->childR);
+        std::shared_ptr<BSTNode> getNode(const KEY &key, std::shared_ptr<BSTNode> currentNode) const{
+            if (currentNode->key == key)
+                return currentNode;
+            else if(key < currentNode->key) return getNode(key, currentNode->childL);
+            else if(key > currentNode->key) return getNode(key,currentNode->childR);
+            else return nullptr;
+
         }
+        //key of child node & node to start search
         std::shared_ptr<BSTNode> getParentNode(const KEY &key, std::shared_ptr<BSTNode> currentNode){
 
-            if (currentNode->childL->key == key || currentNode->childR->key == key) return currentNode;
-            else if(key < currentNode->key) getParentNode(key, currentNode->childL);
-            else if(key > currentNode->key) getParentNode(key,currentNode->childR);
+            if(currentNode->childL != nullptr){
+                if (currentNode->childL->key == key)
+                    return currentNode;
+            }
+            else if(currentNode->childR != nullptr){
+                if (currentNode->childR->key == key)
+                    return currentNode;
+            }
+
+            if(key < currentNode->key) return getParentNode(key, currentNode->childL);
+            else if(key > currentNode->key) return getParentNode(key,currentNode->childR);
             else return nullptr;
         }
 
@@ -85,6 +97,7 @@ namespace sdsu {
         bool insert(const KEY &key, std::shared_ptr<BSTNode> &start)  {
             if (start == nullptr){
                 start = std::make_shared<BSTNode>(key);
+                curSize++;
             }
             else if(key < start->key){
                 return insert(key, start->childL);
@@ -100,6 +113,7 @@ namespace sdsu {
             if (start == nullptr){
                 start = std::make_shared<BSTNode>(key);
                 start->value = val;
+                curSize++;
             }
             else if(start->key == key){
                 if (start->value == val){
@@ -125,13 +139,19 @@ namespace sdsu {
             else if(key > start->key) get(key,start->childR);
 
         }
-        BSTNode &getPredecessor(std::shared_ptr<BSTNode> currentNode){
+        //need to receive left child of sub tree root
+        std::shared_ptr<BSTNode> getPredecessor(std::shared_ptr<BSTNode> currentNode){
 
+            if(currentNode->childR == nullptr)
+                return currentNode->childR;
+            else
+                return (currentNode->childR);
         }
+
         bool remove(std::shared_ptr<BSTNode> parent, std::shared_ptr<BSTNode> nodeBeingRemoved, bool isLeft){
 
 
-            //node is a lead, no children
+            //node is a leaf, no children
             if(nodeBeingRemoved->childL == nullptr && nodeBeingRemoved->childR == nullptr){
                 if(isLeft)
                     parent->childL= nullptr;
@@ -139,7 +159,7 @@ namespace sdsu {
                     parent->childR = nullptr;
             }
             //node has one child
-            if(nodeBeingRemoved->childL == nullptr ^ nodeBeingRemoved->childR == nullptr){
+            else if(nodeBeingRemoved->childL == nullptr ^ nodeBeingRemoved->childR == nullptr){
                 if(isLeft){
                     if(nodeBeingRemoved->childL == nullptr)
                         parent->childL = nodeBeingRemoved->childR;
@@ -155,10 +175,38 @@ namespace sdsu {
             }
             //node has two children
             else{
-
+                std::shared_ptr<BSTNode> predecessor = getPredecessor(nodeBeingRemoved);
+                std::shared_ptr<BSTNode> predecessorParent = getParentNode(predecessor->key, nodeBeingRemoved->childL);
+                if(isLeft) {
+                    nodeBeingRemoved->key = predecessor->key;
+                    nodeBeingRemoved->value = predecessor->value;
+                    remove(predecessorParent, predecessor,true);
+                }
+                else{
+                    nodeBeingRemoved->key = predecessor->key;
+                    nodeBeingRemoved->value = predecessor->value;
+                    remove(predecessorParent, predecessor,false);
+                }
             }
-
+            return true;
         };
+
+        bool removeRoot() {
+            //root is leaf
+            if (root->childL == nullptr && root->childR == nullptr) {
+                root = nullptr;
+                return true;
+            }
+            //one child
+            if (root->childL == nullptr ^ root->childR == nullptr){
+                if (root->childL == nullptr) root = root->childR;
+                else root = root->childL;
+                return true;
+             }
+            //two children
+            return remove(nullptr,root,false);
+
+        }
     public:
         BinarySearchTree():curSize(0) {
 
@@ -173,11 +221,17 @@ namespace sdsu {
         }
 
         bool contains(const KEY &key) const override {
-            return false;
+            std::shared_ptr<BSTNode> nodeFound =  getNode(key, root);
+
+            if(nodeFound == nullptr)
+                return false;
+            else
+                return true;
         }
 
         void clear() override {
-
+            root = nullptr;
+            curSize = 0;
         }
 
         virtual VALUE &get(const KEY &key) override {
@@ -187,7 +241,7 @@ namespace sdsu {
         }
 
         bool insert(const KEY &key) override {
-            curSize++;
+
             return insert(key, root);
         }
 
@@ -222,26 +276,31 @@ namespace sdsu {
         };
 
         bool remove(const KEY &key) override {
-            std::shared_ptr<BSTNode> parentOfNodeToRemove;
 
-            parentOfNodeToRemove = getParentNode(key, root);
+            //remove root node
+            if(root->key == key) {
+                curSize--;
+                return removeRoot();
+
+            }
             std::shared_ptr<BSTNode> nodeToRemove;
-            //TODO: remove root node
-            //if(parentOfNodeToRemove == nullptr)
+            std::shared_ptr<BSTNode> parentOfNodeToRemove;
+            parentOfNodeToRemove = getParentNode(key, root);
+
 
             //node to be deleted is the left child of its parent
             if(parentOfNodeToRemove->childL->key == key) {
                 nodeToRemove = parentOfNodeToRemove->childL;
-                if(nodeToRemove->childL == nullptr && nodeToRemove->childR == nullptr)
-                    remove(parentOfNodeToRemove,nodeToRemove, true);
-                //if (nodeToRemove->childR == nullptr)
-
+                remove(parentOfNodeToRemove,nodeToRemove, true);
             }
-            else nodeToRemove = parentOfNodeToRemove->childR;
+            else {
+                nodeToRemove = parentOfNodeToRemove->childR;
+                remove(parentOfNodeToRemove,nodeToRemove, false);
+            }
 
             //remove(const KEY &key, BSTNode *parent, BSTNode *current);
             curSize--;
-            return false;
+            return true;
         }
 
         int size() const override {

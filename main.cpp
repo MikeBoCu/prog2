@@ -81,7 +81,8 @@ bool testSize_afterInsertingRandomOrder_correctAlongTheWay() {
         uut->insert(distribution(generator)); // insert a random key
 
         // --> TEST <--
-        if (uut->size() != i - 1) return false;
+        if (uut->size() != SIZE)
+            return false;
     }
 
     return true;
@@ -105,8 +106,9 @@ bool testSize_afterRemovingAllSIZEItems_correctAlongTheWay() {
     }
 
     std::set<int>::iterator it = observed.begin();
-    for (int i = 0; i < SIZE; i++) {
-        if (uut->size() != SIZE - i) return false;
+    for (int i = 0; i < observed.size(); i++) {
+        if (uut->size() != observed.size() - i)
+            return false;
         uut->remove(*it);
         it++;
     }
@@ -126,10 +128,12 @@ bool testInsert_SIZERandomItems_containsAll() {
         int val = distribution(generator);
         if (obs.find(val) != obs.end()) continue;
         obs.insert(val);
+        uut->insert(val);
         n--;
     }
     for (auto val: obs) {
-        if (!uut->contains(val)) return false;
+        if (!uut->contains(val))
+            return false;
     }
 
     return true;
