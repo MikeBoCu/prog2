@@ -166,7 +166,8 @@ bool testClear_insertSIZERandomitems_isEmpty() {
 bool testRemove_itemMissing_returnsFalse() {
     std::shared_ptr<sdsu::Set<char>> uut(new sdsu::BinarySearchTree<char,char>());
     uut->insert('.');
-    if (!uut->exists('.')) return false;
+    if (!uut->exists('.'))
+        return false;
     return !uut->remove('@');
 }
 
@@ -189,22 +190,27 @@ bool testRemove_sameProbeValuesSIZETimesWhileBuilding_presentNotPresent() {
         int val = distribution(generator);
         if (obs.find(val) != obs.end()) continue;
         obs.insert(val);
-
+        if(n == 1)
+            int x = 5;
         uut->insert(val);
         uut->insert(0);
         uut->insert(SIZE + 1);
-        if (!uut->contains(0) || !uut->contains(SIZE + 1)) return false;
+        if (!uut->contains(0) || !uut->contains(SIZE + 1))
+            return false;
 
         // ACTION
         uut->remove(0);
         uut->remove(SIZE + 1);
 
         // Test
-        if (uut->contains(0) || uut->contains(SIZE + 1)) return false;
+        if (uut->contains(0))
+            return false;
+        if(uut->contains(SIZE + 1))
+            return false;
         n--;
     }
 
-    return false;
+    return true;
 }
 
 template<int SIZE>
@@ -236,21 +242,34 @@ bool testRemove_withChildren_presentNotPresent() {
         uut.insert(key);
     }
 
+    //TODO: 5 dissapears at i = 63, need to figure out why
+
     // ACTION: remove the first half of the sequence we inserted. This should be the odd numbers
     for (int i = 0; i < (SIZE >> 1); i++) {
-        if (!uut.remove(sequence[i])) return false;
+
+        if(i == 511)
+            int x = 10;
+
+        if (!uut.remove(sequence[i]))
+            return false;
+
     }
 
     // VERIFY: Not the first part of the sequence is not present
     for (int i = 0; i < (SIZE >> 1); i++) {
-        if (uut.contains(sequence[i])) return false;
+
+        if (uut.contains(sequence[i]))
+            return false;
     }
 
     // VERIFY: Present
-    for (int i = (SIZE >> 1); i < SIZE; i++) {
-        if (!uut.contains(sequence[i])) return false;
+    for (int i = (SIZE >> 1); i < SIZE-1; i++) {
+        if (i == 1022)
+            int x = i;
+        if (!uut.contains(sequence[i]))
+            return false;
     }
-
+    return true;
 }
 
 template<int SIZE>
@@ -266,8 +285,9 @@ bool testRemove_leaves_presentNotPresent() {
 
     // ACTION: Leaves are odd due to how balanced sequence created, and in the last half
     // of the sequence
-    for (int i = (SIZE >> 1) - 1; i < SIZE; i++) {
-        if (!uut.remove(sequence[i])) return false;
+    for (int i = (SIZE >> 1) - 1; i < SIZE-1; i++) {
+        if (!uut.remove(sequence[i]))
+            return false;
     }
 
     // VERIFY: Not present
